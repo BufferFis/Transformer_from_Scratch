@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 
 class InputEmbeddings(nn.Module):
-    def __init__(self, d_model: int, vocab_size: int):
+    def __init__(self, d_model: int, vocab_size: int) -> None:
       super.__init__()
       self.d_model = d_model
       self.vocab_size = vocab_size
@@ -39,3 +39,15 @@ class PositionalEncoding(nn.Module):
       x = self.dropout(x)
       return x
 
+class LayerNormalization(nn.Module):
+    def __init__(self, eps: float = 10**-6) -> None: # the float value is to avoid devision by zero
+      super().__init__()
+      self.eps = eps
+      self.alpha = nn.Parameter(torch.ones(1)) # Param makes it learnable (this is multiplied)
+      self.bias = nn.Parameter(torch.zeros(1)) # Param makes it learnable (this is added)
+
+    def forward(self, x):
+      mean = x.mean(dim=-1, keepdim=True) # -1 represents everything after the batch
+      std = x.std(dim=-1, keepdim=True)
+      norm = self.alpha * (x - mean) / (std + self.eps) + self.bias
+      return norm
