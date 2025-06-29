@@ -4,13 +4,13 @@ import torch.nn as nn
 
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int) -> None:
-      super.__init__()
-      self.d_model = d_model
-      self.vocab_size = vocab_size
-      self.embedding = nn.Embedding(vocab_size, d_model)
+        super.__init__()
+        self.d_model = d_model
+        self.vocab_size = vocab_size
+        self.embedding = nn.Embedding(vocab_size, d_model)
 
     def forward(self, x):
-      return self.embedding(x) * math.sqrt(self.d_model)
+        return self.embedding(x) * math.sqrt(self.d_model)
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model: int, seq_len: int, dropout: float) -> None:
@@ -35,19 +35,27 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe) #Should be saved when model saved but dont learn this as it stays fixed 
 
     def forward(self,x):
-      x = x + (self.pe[:, :x.shape[1], :]).requires_grad_(False)
-      x = self.dropout(x)
-      return x
+        x = x + (self.pe[:, :x.shape[1], :]).requires_grad_(False)
+        x = self.dropout(x)
+        return x
 
 class LayerNormalization(nn.Module):
     def __init__(self, eps: float = 10**-6) -> None: # the float value is to avoid devision by zero
-      super().__init__()
-      self.eps = eps
-      self.alpha = nn.Parameter(torch.ones(1)) # Param makes it learnable (this is multiplied)
-      self.bias = nn.Parameter(torch.zeros(1)) # Param makes it learnable (this is added)
+        super().__init__()
+        self.eps = eps
+        self.alpha = nn.Parameter(torch.ones(1)) # Param makes it learnable (this is multiplied)
+        self.bias = nn.Parameter(torch.zeros(1)) # Param makes it learnable (this is added)
 
     def forward(self, x):
-      mean = x.mean(dim=-1, keepdim=True) # -1 represents everything after the batch
-      std = x.std(dim=-1, keepdim=True)
-      norm = self.alpha * (x - mean) / (std + self.eps) + self.bias
-      return norm
+        mean = x.mean(dim=-1, keepdim=True) # -1 represents everything after the batch
+        std = x.std(dim=-1, keepdim=True)
+        norm = self.alpha * (x - mean) / (std + self.eps) + self.bias
+        return norm
+    
+class FeedForward(nn.Module):
+    def __init__(self, d_model: int, d_ff: int, dropout: float) -> None:
+        super().__init__()
+        self.linear1 = nn.Linear(d_model, d_ff)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(d_ff, d_model)
+    
