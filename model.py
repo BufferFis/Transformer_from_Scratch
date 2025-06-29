@@ -58,4 +58,11 @@ class FeedForward(nn.Module):
         self.linear1 = nn.Linear(d_model, d_ff)
         self.dropout = nn.Dropout(dropout)
         self.linear2 = nn.Linear(d_ff, d_model)
+
+    def forward(self, x):
+        x = self.linear1(x)
+        x = torch.relu(x)
+        x = self.dropout(x)
+        x = self.linear2(x)
+        return x
     
