@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int) -> None:
-        super.__init__()
+        super().__init__()
         self.d_model = d_model
         self.vocab_size = vocab_size
         self.embedding = nn.Embedding(vocab_size, d_model)
@@ -116,7 +116,7 @@ class MultiHeadAttentionBlock(nn.Module):
         x, self.attention_scores = MultiHeadAttentionBlock.attention(query, key, value, mask, self.dropout)
         
         # (batch_size, h, seq_len, d_k) --> (batch, seq_len, h, d_k) --> (batch_size, seq_len, d_model)
-        x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, self.h * self)
+        x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, self.h * self.d_k)
 
         # (Batch_size, seq_len, d_model) --> (batch_size, seq_len, d_model)
         return self.w_o(x)
@@ -155,7 +155,7 @@ class Encoder(nn.Module):
             x = layer(x, mask)
         return self.norm(x)
 
-class DecoderBlock(nn.ModuleList):
+class DecoderBlock(nn.Module):
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float) -> None:
         super().__init__()
         self.self_attention_block = self_attention_block
@@ -188,11 +188,12 @@ class ProjectionLayer(nn.Module):
         self.proj = nn.Linear(d_model, vocab_size)
 
     def forward(self, x):
-        return torch.log_softmax(self.proj(x), dim= -1)  # (batch_size, seq_len, d_model) --> (batch_size, seq_len, vocab_size)
+        # return logits; CrossEntropyLoss applies log-softmax internally
+        return self.proj(x)
     
 
 class Transformer(nn.Module):
-    def __init(self, encoder: Encoder, decoder: Decoder, src_embed: InputEmbeddings, tgt_embed: InputEmbeddings, src_pos: PositionalEncoding, tgt_pos: PositionalEncoding, projection_layer: ProjectionLayer) -> None:
+    def __init__(self, encoder: Encoder, decoder: Decoder, src_embed: InputEmbeddings, tgt_embed: InputEmbeddings, src_pos: PositionalEncoding, tgt_pos: PositionalEncoding, projection_layer: ProjectionLayer) -> None:
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
@@ -261,7 +262,7 @@ def build_transformer(
 
     # Create the transformer model
 
-    Transformer = Transformer(
+    transformer = Transformer(
         encoder=encoder,
         decoder=decoder,
         src_embed=src_embed,
@@ -273,8 +274,8 @@ def build_transformer(
 
     # Init the params
 
-    for p in Transformer.parameters():
+    for p in transformer.parameters():
         if p.dim() > 1:
             nn.init.xavier_uniform_(p)
     
-    return Transformer
+    return transformer
